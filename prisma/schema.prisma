@@ -1,0 +1,82 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum RefundStatus {
+  NOT_REQUESTED
+  PENDING
+  APPROVED
+  REJECTED
+  COMPLETED
+}
+
+enum AgentLogStatus {
+  INFO
+  SUCCESS
+  WARNING
+  ERROR
+}
+
+model Customer {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  phone     String?
+  createdAt DateTime @default(now())
+
+  orders  Order[]
+  refunds Refund[]
+}
+
+model Order {
+  id              String       @id @default(cuid())
+  customerId      String
+  customer        Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  productName     String
+  productCategory String
+  amount          Float
+  orderDate       DateTime
+  deliveryDate    DateTime?
+  status          OrderStatus  @default(DELIVERED)
+  refundStatus    RefundStatus @default(NOT_REQUESTED)
+  isClearanceItem Boolean      @default(false)
+  isFraudulent    Boolean      @default(false)
+  createdAt       DateTime     @default(now())
+
+  refund Refund?
+}
+
+model Refund {
+  id         String       @id @default(cuid())
+  orderId    String       @unique
+  order      Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  customerId String
+  customer   Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  amount     Float
+  status     RefundStatus @default(PENDING)
+  reason     String
+  createdAt  DateTime     @default(now())
+}
+
+model AgentLog {
+  id        String         @id @default(cuid())
+  sessionId String
+  eventType String
+  toolName  String?
+  message   String
+  status    AgentLogStatus @default(INFO)
+  metadata  String?
+  createdAt DateTime       @default(now())
+}
